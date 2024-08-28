@@ -1269,7 +1269,7 @@ class apb_driver extends uvm_driver#(apb_tr);
         if(!uvm_config_db#(virtual apb_if)::get(this, "", "apb_if", vif))
             `uvm_fatal("apb_driver", "    apb_if can't get  ")
     endfunction
-
+    
     task main_phase(uvm_phase phase);
         while(1)begin
             if(!vif.prstn)begin
@@ -1282,7 +1282,17 @@ class apb_driver extends uvm_driver#(apb_tr);
             end
             else begin
                 seq_item_port.get_next_item(req);
+                
+                `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
+                begin_tr(req);
+                `endif
+                
                 drive_one_pkt(req);
+
+                `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
+                end_tr(req);
+                `endif
+                
                 void'($cast(rsp,req.clone())));
                 rsp.set_id_info(req);
                 seq_item_port.item_done(rsp);
@@ -1293,42 +1303,38 @@ class apb_driver extends uvm_driver#(apb_tr);
     task drive_one_pkt(apb_tr tr);
         @(posedge vif.pclk)
         if(tr.trans_kind == WRITE)begin
-            vif.paddr        <= tr.addr;    
-            vif.psel         <= 1'b1;
-            vif.pwrite       <= 1'b1;   
-            vif.pwdata       <= tr.wdata;
-            @(posedge vif.pclk)
-            vif.penable      <= 1'b1;
-            @(posedge vif.pclk)
-            while(1)begin
-                if(vif.pready == 1'b0)
-                    @(posedge vif.pclk);
-                else begin
-                    vif.penable  <= 1'b0;
-                    vif.psel     <= 1'b0;
-                    vif.pwdata   <= 32'b0;
-                    break;
-                end
-            end
-        end
-        else begin
-            vif.paddr       <= tr.addr;
+            vif.paddr       <= tr.addr;    
             vif.psel        <= 1'b1;
-            vif.pwrite      <= 1'b0;
+            vif.pwrite      <= 1'b1;   
+            vif.pwdata      <= tr.wdata;
+            
             @(posedge vif.pclk)
             vif.penable     <= 1'b1;
+            
             @(posedge vif.pclk)
-            while(1)begin
-                if(vif.pready == 1'b0)
-                    @(posedge vif.pclk)
-                else begin
-                    tr.rdata    <= vif.prdata;
-                    vif.penable <= 1'b0;
-                    vif.psel    <= 1'b0;
-                    #1;
-                    break;
-                end
+            while(vif.pready !== 1'b1)begin
+                @(posedge vif.pclk);
             end
+            vif.penable     <= 1'b0;
+            vif.psel        <= 1'b0;
+            vif.pwdata      <= 32'b0;
+        end
+        else begin
+            vif.paddr      <= tr.addr;
+            vif.psel       <= 1'b1;
+            vif.pwrite     <= 1'b0;
+            
+            @(posedge vif.pclk)
+            vif.penable    <= 1'b1;
+
+            @(posedge vif.pclk)
+            while(vif.pready !== 1'b1)begin
+                @(posedge vif.pclk);
+            end
+            vif.penable    <= 1'b0;
+            vif.psel       <= 1'b0;
+            tr.rdata       <= vif.prdata;
+            #1;
         end
     endtask
 endclass
@@ -1484,7 +1490,17 @@ class ahb_driver extends uvm_driver#(ahb_tr);
             end
             else begin
                 seq_item_port.get_next_item(req);
+
+                `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
+                begin_tr(req);
+                `endif
+                
                 drive_one_pkt(req);
+
+                `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
+                end_tr(req);
+                `endif
+                
                 void'($cast(rsp,req.clone()));
                 rsp.set_id_info(req);
                 seq_item_port.item_done(rsp);
@@ -1502,17 +1518,14 @@ class ahb_driver extends uvm_driver#(ahb_tr);
             vif.hsize   <= 3'b010; //szie == 32bit 
             vif.hburst  <= 3'b0;   //single transmit
             vif.hsel    <= 1'b1;            
-            while(1)begin
-                @(posedge vif.hclk)
-                if(vif.hready_in == 1'b0)
-                    @(posedge vif.hclk);
-                else begin
-                    vif.htrans  <= 2'b0;
-                    vif.hwdata  <= tr.wdata;
-                    vif.hwrite  <= 1'b0;
-                    vif.hsel    <= 1'b0;
-                    break;
-                end
+
+            while(vif.hready_in !== 1'b1)begin
+                @(posedge vif.hclk);
+            end
+            vif.htrans  <= 2'b0;
+            vif.hwdata  <= tr.wdata;
+            vif.hwrite  <= 1'b0;
+            vif.hsel    <= 1'b0;
             end
         end
         //ahb master read
@@ -1523,21 +1536,20 @@ class ahb_driver extends uvm_driver#(ahb_tr);
             vif.htrans  <= 2'b10;  //NOSEQ
             vif.hsize   <= 3'b010; //szie == 32bit 
             vif.hburst  <= 3'b0;   //single transmit
-            vif.hsel    <= 1'b1;     
-            while(1)begin
-                @(posedge vif.hclk)
-                if(vif.hready_in == 1'b0)
-                    @(posedge vif.hclk);
-                else begin
-                    vif.htrans  <= 2'b0; //IDLE
-                    tr.rdata    <= vif.hrdata;
-                    vif.hwrite  <= 1'b0;
-                    vif.haddr   <= 32'b0;
-                    vif.hsel    <= 1'b0;
-                    #1;
-                    break;
-                end
+            vif.hsel    <= 1'b1;
+
+            while(vif.hready_in !== 1'b1)begin
+                @(posedge vif.hclk);
             end
+            vif.htrans  <= 2'b0; //IDLE
+
+            while(vif.hready_in !== 1'b1)begin
+                @(posedge vif.hclk);
+            end
+            tr.rdata    <= vif.hrdata;
+            vif.haddr   <= 32'b0;
+            vif.hsel    <= 1'b0;
+            #1;
         end
     endtask
 endclass
