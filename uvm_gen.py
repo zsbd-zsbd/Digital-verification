@@ -1284,13 +1284,13 @@ class apb_driver extends uvm_driver#(apb_tr);
                 seq_item_port.get_next_item(req);
                 
                 `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
-                begin_tr(req);
+                    begin_tr(req);
                 `endif
                 
                 drive_one_pkt(req);
 
                 `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
-                end_tr(req);
+                    end_tr(req);
                 `endif
                 
                 void'($cast(rsp,req.clone())));
@@ -1334,7 +1334,6 @@ class apb_driver extends uvm_driver#(apb_tr);
             vif.penable    <= 1'b0;
             vif.psel       <= 1'b0;
             tr.rdata       <= vif.prdata;
-            #1;
         end
     endtask
 endclass
@@ -1492,13 +1491,13 @@ class ahb_driver extends uvm_driver#(ahb_tr);
                 seq_item_port.get_next_item(req);
 
                 `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
-                begin_tr(req);
+                    begin_tr(req);
                 `endif
                 
                 drive_one_pkt(req);
 
                 `ifdef UVM_DISABLE_AUTO_ITEM_RECORDING
-                end_tr(req);
+                    end_tr(req);
                 `endif
                 
                 void'($cast(rsp,req.clone()));
@@ -1549,7 +1548,6 @@ class ahb_driver extends uvm_driver#(ahb_tr);
             tr.rdata    <= vif.hrdata;
             vif.haddr   <= 32'b0;
             vif.hsel    <= 1'b0;
-            #1;
         end
     endtask
 endclass
