@@ -1152,12 +1152,12 @@ def main():
                         if(field_low_bit != 0):
                             ralf_file.write("    field %s @%s {\\n"%(reg_list_all[i][5+4*j],field_low_bit))
                         else:
-                            ralf_file.write("    field %s {\\n"%(reg_list_all[i][5+4*j]))
+                            ralf_file.write("    field %s @0 {\\n"%(reg_list_all[i][5+4*j]))
                     else:
                         if(int(current_field_bit) != 0):
                             ralf_file.write("    field %s @%s {\\n"%(reg_list_all[i][5+4*j],current_field_bit))
                         else:
-                            ralf_file.write("    field %s {\\n"%(reg_list_all[i][5+4*j]))
+                            ralf_file.write("    field %s @0 {\\n"%(reg_list_all[i][5+4*j]))
                     
                     if(':' in current_field_bit):
                         ralf_file.write("      bits %s;\\n"%(current_field_width))
