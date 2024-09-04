@@ -419,9 +419,9 @@ def create_base_seq_file(module_name):
     #Write the get_config_db function
     seq_file.write('    task get_config_db();\n')
     seq_file.write('        if(!uvm_config_db#(virtual %s_if)::get(null, "", "%s_if", %s_if))\n'%(module_name,module_name,module_name))
-    seq_file.write('            `uvm_fatal(get_name(),"  Cannot get %s_if");\n'%(module_name))
+    seq_file.write('            `uvm_fatal(get_name(),"  Cannot get %s_if from top");\n'%(module_name))
     seq_file.write('        if(!uvm_config_db#(ral_block_%s_reg)::get(null, "","reg_model",reg_model))\n'%(module_name))
-    seq_file.write('            `uvm_fatal(get_name(),$sformatf("Cannot get reg_model from config db"))\n')
+    seq_file.write('            `uvm_fatal(get_name()," Cannot get reg_model from top ");\n
     seq_file.write('        //Add Other Config_db')
     seq_file.write('\n')
     seq_file.write('\n')
